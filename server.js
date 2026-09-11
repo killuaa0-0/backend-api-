@@ -1,25 +1,31 @@
 const express = require('express');
+const cors = require('cors');
 const app = express();
 app.use(express.json());
-const cors = require('cors');
 app.use(cors());
+
 let posts = [
     {
-        id: "1",
+        _id: "1",
         title: "hello haha this is a real post",
         author: "pranav",
         category: "tech",
-        body: "This is the body of the first post, and it needs to be at least fifty characters long to pass validation."
+        body: "This is the body of the first post, and it needs to be at least fifty characters long to pass validation.",
+        createdAt: new Date().toISOString()
     }
 ];
-let comments = []; // each: { id, postId, text, commenter }
+let comments = []; // each: { _id, postId, text, commenter }
 let nextPostId = 2;
 let nextCommentId = 1;
 
 // CREATE a post
 app.post('/posts', (req, res) => {
     const { title, author, category, body } = req.body;
-    const newPost = { id: String(nextPostId++), title, author, category, body };
+    const newPost = {
+        _id: String(nextPostId++),
+        title, author, category, body,
+        createdAt: new Date().toISOString()
+    };
     posts.push(newPost);
     res.json(newPost);
 });
@@ -31,14 +37,14 @@ app.get('/posts', (req, res) => {
 
 // GET one specific post by id
 app.get('/posts/:id', (req, res) => {
-    const post = posts.find(p => p.id === req.params.id);
+    const post = posts.find(p => p._id === req.params.id);
     if (!post) return res.status(404).json({ error: 'Post not found' });
     res.json(post);
 });
 
 // UPDATE a specific post
 app.put('/posts/:id', (req, res) => {
-    const post = posts.find(p => p.id === req.params.id);
+    const post = posts.find(p => p._id === req.params.id);
     if (!post) return res.status(404).json({ error: 'Post not found' });
 
     const { title, author, category, body } = req.body;
@@ -51,7 +57,7 @@ app.put('/posts/:id', (req, res) => {
 
 // DELETE a specific post (also deletes its comments)
 app.delete('/posts/:id', (req, res) => {
-    const index = posts.findIndex(p => p.id === req.params.id);
+    const index = posts.findIndex(p => p._id === req.params.id);
     if (index === -1) return res.status(404).json({ error: 'Post not found' });
 
     posts.splice(index, 1);
@@ -61,25 +67,29 @@ app.delete('/posts/:id', (req, res) => {
 
 // CREATE a comment on a specific post
 app.post('/posts/:postId/comments', (req, res) => {
-    const post = posts.find(p => p.id === req.params.postId);
+    const post = posts.find(p => p._id === req.params.postId);
     if (!post) return res.status(404).json({ error: 'Post not found' });
 
     const { text, commenter } = req.body;
-    const newComment = { id: String(nextCommentId++), postId: req.params.postId, text, commenter };
+    const newComment = {
+        _id: String(nextCommentId++),
+        postId: req.params.postId,
+        text, commenter,
+        createdAt: new Date().toISOString()
+    };
     comments.push(newComment);
     res.json(newComment);
 });
 
 // LIST comments for a specific post
 app.get('/posts/:postId/comments', (req, res) => {
-    const post = posts.find(p => p.id === req.params.postId);
+    const post = posts.find(p => p._id === req.params.postId);
     if (!post) return res.status(404).json({ error: 'Post not found' });
 
     const postComments = comments.filter(c => c.postId === req.params.postId);
     res.json(postComments);
 });
 
-// simple health check -- useful for deployment platforms to verify the service is alive
 app.get('/health', (req, res) => {
     res.json({ status: 'ok' });
 });
